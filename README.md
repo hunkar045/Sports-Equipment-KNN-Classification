@@ -134,8 +134,8 @@ MachinneLearningModel/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/hunkar045/MachinneLearningModel.git
-cd MachinneLearningModel
+git clone https://github.com/hunkar045/Sports-Equipment-KNN-Classification.git
+cd Sports-Equipment-KNN-Classification
 ```
 
 ### 2. Create and Activate Virtual Environment (Recommended)
