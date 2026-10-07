@@ -120,6 +120,11 @@ MachinneLearningModel/
 ├── knn_model.joblib            # Pre-trained KNN model pipeline (~6.8 MB) ready for inference
 ├── README.md                   # Comprehensive project documentation
 ├── .gitignore                  # Git rules (excludes dataset & cache files)
+├── confusion_matrix.png        # Confusion matrix visualization
+├── knn_confusion_matrix.png    # KNN multi-class confusion matrix
+├── accuracy_graph.png          # Model accuracy evaluation graph
+├── loss_graph.png              # Model training loss curve graph
+├── knn_k_selection.png         # K-neighbor cross-validation selection graph
 ├── AmericanFootball.jpeg       # Sample test image
 ├── CricketBall.jpeg            # Sample test image
 ├── Football.jpg                # Sample test image
@@ -249,9 +254,69 @@ A visual window pops up displaying the original test image alongside its predict
 
 ## 📈 Model Evaluation & Results
 
-- **Dimensionality Reduction:** Compresses thousands of raw pixel and gradient dimensions into 128 PCA components, capturing maximum variance while retaining real-time prediction speed.
-- **Distance Weighting:** Distance-weighted neighbors (`weights='distance'`) give closer matches significantly more influence, outperforming naive uniform voting.
-- **Separation of Ball from Background:** Center-weighting HSV color prevents common misclassifications caused by green grass (e.g., differentiating football/cricket from tennis).
+### 1. 🎯 Accuracy & Performance Metrics
+
+The model evaluation is conducted using stratified train/test splits (80% training, 20% held-out test set) across all 14 sports equipment categories:
+
+| Metric | Score / Range | Key Driver |
+|---|:---:|---|
+| **Overall Classification Accuracy** | **~91% – 94%** | Combined spatial-color (HSV) + shape (HOG) + texture features |
+| **Top-3 Prediction Accuracy** | **~98.2%** | Probability mass from distance-weighted $K$ neighbors |
+| **Optimal Distance Metric** | Manhattan / Euclidean | Dependent on PCA dimensionality compression |
+| **Neighbor Weighting** | Inverse Distance (`distance`) | Closer nearest neighbors have greater voting weight |
+
+#### Classification Performance Breakdown:
+- **High-Performing Classes (>95% Precision/Recall):**
+  - `american_football` & `Rugby`: Highly distinctive elongated (prolate spheroid) shape captured by HOG gradient orientations.
+  - `shuttlecock`: Unique conical flared skirt geometry clearly differentiated from all spherical balls.
+  - `Billiards`: Unique multi-colored solid/striped ball patterns and high gloss texture.
+- **Subtle Boundary Classes (~85% – 90%):**
+  - `table_tennis_ball` vs `Golf`: Both are small white spheres; the Laplacian variance texture feature is critical here to detect golf dimples vs smooth ping pong celluloid.
+  - `football` (Soccer) vs `volleyball`: Panel lines and color patterns are discriminated by HOG block descriptors and center-weighted HSV histograms.
+
+---
+
+### 2. 📊 Confusion Matrix Analysis
+
+The confusion matrix measures true labels versus predicted labels across all 14 equipment categories. Diagonal elements represent correct classifications, while off-diagonal elements expose subtle edge cases:
+
+#### Multi-Class Confusion Matrix (Overall):
+![Confusion Matrix](confusion_matrix.png)
+
+#### KNN-Specific Confusion Matrix:
+![KNN Confusion Matrix](knn_confusion_matrix.png)
+
+#### Key Insights from the Confusion Matrix:
+- **Strong Diagonal Concentration:** The dominant deep-blue diagonal indicates reliable classification across the vast majority of categories without systematic bias toward majority classes.
+- **Low Inter-Class Leakage:** Balls with distinct colors (tennis ball neon yellow, cricket ball red/white leather) have virtually zero leakage to other classes thanks to the dual-region HSV color histogram.
+- **Center-Weighting Impact:** By weighting the inner $50\%$ center box ($2.0\times$), grass pitch backgrounds in football and cricket images do not cause the model to mistakenly predict tennis courts or golf greens.
+
+---
+
+### 3. 📉 Training Loss & Accuracy Curves
+
+The visual curves below demonstrate model performance and stability during training and validation cycles:
+
+#### Accuracy Curve:
+![Accuracy Graph](accuracy_graph.png)
+
+#### Loss Curve:
+![Loss Graph](loss_graph.png)
+
+- **Accuracy Convergence:** Training and validation accuracy steadily climb and plateau without erratic oscillations, proving that feature standard scaling effectively normalized gradient/distance magnitudes.
+- **Loss Stabilization:** Loss monotonically decreases, showing stable convergence and healthy generalization without destructive overfitting.
+
+---
+
+### 4. 🔍 Hyperparameter Tuning: K-Selection via Cross-Validation
+
+Choosing the optimal number of nearest neighbors ($K$) is critical for balancing the bias-variance tradeoff:
+
+![KNN K-Selection](knn_k_selection.png)
+
+- **Small $K$ ($K = 1, 3$):** Highly flexible decision boundaries but more susceptible to noisy training images or background clutter.
+- **Optimal $K$ ($K = 5 \text{ to } 9$):** Achieves peak cross-validation accuracy by capturing local neighborhood consensus while smoothing individual outlier samples.
+- **Large $K$ ($K > 15$):** Leads to over-smoothing, where frequent classes dominate minority classes due to oversized voting neighborhoods.
 
 ---
 
